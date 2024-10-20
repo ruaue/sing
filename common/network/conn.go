@@ -70,8 +70,29 @@ type ExtendedConn interface {
 	net.Conn
 }
 
+type CloseHandler = func(it error)
+
+func AppendCloseHandler(parent CloseHandler, child CloseHandler) CloseHandler {
+	if parent == nil {
+		return parent
+	} else if child == nil {
+		return child
+	}
+	return func(it error) {
+		child(it)
+		parent(it)
+	}
+}
+
+// Deprecated: Use TCPConnectionHandlerEx instead.
 type TCPConnectionHandler interface {
-	NewConnection(ctx context.Context, conn net.Conn, metadata M.Metadata) error
+	NewConnection(ctx context.Context, conn net.Conn,
+		//nolint:staticcheck
+		metadata M.Metadata) error
+}
+
+type TCPConnectionHandlerEx interface {
+	NewConnectionEx(ctx context.Context, conn net.Conn, source M.Socksaddr, destination M.Socksaddr, onClose CloseHandler)
 }
 
 type NetPacketConn interface {
@@ -85,12 +106,26 @@ type BindPacketConn interface {
 	net.Conn
 }
 
+// Deprecated: Use UDPHandlerEx instead.
 type UDPHandler interface {
-	NewPacket(ctx context.Context, conn PacketConn, buffer *buf.Buffer, metadata M.Metadata) error
+	NewPacket(ctx context.Context, conn PacketConn, buffer *buf.Buffer,
+		//nolint:staticcheck
+		metadata M.Metadata) error
 }
 
+type UDPHandlerEx interface {
+	NewPacket(ctx context.Context, conn PacketConn, buffer *buf.Buffer, source M.Socksaddr, destination M.Socksaddr) error
+}
+
+// Deprecated: Use UDPConnectionHandlerEx instead.
 type UDPConnectionHandler interface {
-	NewPacketConnection(ctx context.Context, conn PacketConn, metadata M.Metadata) error
+	NewPacketConnection(ctx context.Context, conn PacketConn,
+		//nolint:staticcheck
+		metadata M.Metadata) error
+}
+
+type UDPConnectionHandlerEx interface {
+	NewPacketConnectionEx(ctx context.Context, conn PacketConn, source M.Socksaddr, destination M.Socksaddr, onClose CloseHandler)
 }
 
 type CachedReader interface {
